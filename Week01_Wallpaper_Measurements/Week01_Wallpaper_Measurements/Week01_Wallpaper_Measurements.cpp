@@ -34,7 +34,7 @@ int main()
     cout << "Enter the wall length (in feet): ";
     cin >> wallLength;
     if (wallLength <= 0) {
-        cout << "Error: Length must be a positive number. Exiting program." << endl;
+        cout << "Error: Length must be a positive number. exiting program." << endl;
         return 1; // Gracefully exit due to invalid input
     }   // Added a random comment
 
