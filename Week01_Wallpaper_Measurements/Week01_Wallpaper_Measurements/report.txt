@@ -4,9 +4,9 @@
 ---------------------------------------------
 | METRIC                            DETAILS |
 ---------------------------------------------
-| Project Target:                      rime |
-| Dimensions:                 33.00x  44.00 |
-| Calculated Area:               1452.00 sqf |
-| Current Stock:                         33 |
-| Total Rolls Needed:                 66.00 |
+| Project Target:                      Rima |
+| Dimensions:                 44.00x  22.00 |
+| Calculated Area:                968.00 sqf |
+| Current Stock:                         22 |
+| Total Rolls Needed:                  0.97 |
 ---------------------------------------------

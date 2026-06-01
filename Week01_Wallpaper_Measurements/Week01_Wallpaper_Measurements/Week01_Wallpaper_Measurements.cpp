@@ -36,7 +36,7 @@ int main()
     if (wallLength <= 0) {
         cout << "Error: Length must be a positive number. Exiting program." << endl;
         return 1; // Gracefully exit due to invalid input
-    }
+    }   // Added a random comment
 
     // Input 3: Double for Wall Width
     cout << "Enter the wall width (in feet): ";
