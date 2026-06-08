@@ -1,107 +1,126 @@
 #include <iostream>
-#include <string>   // Required for string variables and getline
-#include <iomanip>  // Required for setw, setprecision, left, right
-#include <fstream>  // Required for file output (report.txt)
+#include <string>
+#include <iomanip>  // Required for setw and setprecision
+#include <fstream>  // Required for report.txt file output
 
 using namespace std;
 
-int main()
-{
-    // ---- Variable Declarations ----
-    string clientName;
-    double wallLength = 0.0;
-    double wallWidth = 0.0;
-    int customRollsInStock = 0; // Added integer type requirement
-    double rollCoverage = 0.0;
+int main() {
+    // ==========================================
+    // VARIABLE DECLARATIONS
+    // ==========================================
+    int menuChoice;
+    string roomName;
+    int wallCount;
+    double pricePerRoll;
+    int totalRollsNeeded;
+    double totalCost;
+    ofstream outputFile;
 
-    double totalWallArea = 0.0;
-    double totalRollsNeeded = 0.0;
+    // 1. Welcome Banner
+    cout << "========================================" << endl;
+    cout << "     DIY HOME IMPROVEMENT TOOL          " << endl;
+    cout << "========================================" << endl;
+    cout << "Welcome! This tool helps plan your project.\n" << endl;
 
-    // ---- 1. Friendly Introduction Banner ----
-    cout << "=====================================================" << endl;
-    cout << "      WELCOME TO THE PREMIUM WALLPAPER CALCULATOR     " << endl;
-    cout << "=====================================================" << endl;
-    cout << "This tool will calculate your project needs and save a" << endl;
-    cout << "professional summary report automatically.\n" << endl;
+    // 2. Main Menu Options
+    cout << "--- MAIN MENU ---" << endl;
+    cout << "1. Run Wallpaper Calculator" << endl;
+    cout << "2. View Project Level Rules" << endl;
+    cout << "3. Exit Program" << endl;
+    cout << "Enter choice (1-3): ";
+    cin >> menuChoice;
 
-    // ---- 2. User Input with Validation (Mixed Types) ----
-
-    // Input 1: String with spaces (using getline)
-    cout << "Enter the client or project name: ";
-    getline(cin, clientName);
-
-    // Input 2: Double for Wall Length
-    cout << "Enter the wall length (in feet): ";
-    cin >> wallLength;
-    if (wallLength <= 0) {
-        cout << "Error: Length must be a positive number. exiting program." << endl;
-        return 1; // Gracefully exit due to invalid input
-    }   // Added a random comment
-
-    // Input 3: Double for Wall Width
-    cout << "Enter the wall width (in feet): ";
-    cin >> wallWidth;
-    if (wallWidth <= 0) {
-        cout << "Error: Width must be a positive number. Exiting program." << endl;
+    // Menu Input Validation
+    if (menuChoice < 1 || menuChoice > 3) {
+        cout << "Error: Invalid choice. Ending program." << endl;
         return 1;
     }
 
-    // Input 4: Integer for inventory count
-    cout << "How many rolls do you currently have in stock? ";
-    cin >> customRollsInStock;
-    if (customRollsInStock < 0) {
-        cout << "Error: Stock cannot be negative. Exiting program." << endl;
-        return 1;
+    // Clear buffer for the upcoming string input
+    cin.ignore();
+
+    // Switch Statement for Navigation
+    switch (menuChoice) {
+    case 1: {
+        cout << "\n--- Wallpaper Calculator ---" << endl;
+
+        // Gather Inputs
+        cout << "Enter room name (ex: Master Bedroom): ";
+        getline(cin, roomName);
+
+        cout << "Enter number of walls: ";
+        cin >> wallCount;
+
+        cout << "Enter price per roll: $";
+        cin >> pricePerRoll;
+
+        // Calculations
+        totalRollsNeeded = wallCount * 2;
+        totalCost = totalRollsNeeded * pricePerRoll;
+
+        cout << "\n--- Project Status ---" << endl;
+
+        // Compound Condition 1: Project Size Check
+        if (wallCount >= 4 && totalRollsNeeded > 6) {
+            cout << ">> Large project. Please buy matching batches." << endl;
+        }
+        else {
+            cout << ">> Small project. Standard rolls will work." << endl;
+        }
+
+        // Compound Condition 2: Cost Level Check
+        if (totalCost >= 150.00 || pricePerRoll > 45.0) {
+            cout << ">> Premium budget level. Look for coupons." << endl;
+        }
+        else {
+            cout << ">> Standard budget level. Excellent value choice." << endl;
+        }
+
+        // Output to Screen
+        cout << "\n=========================================" << endl;
+        cout << "       WALLPAPER PROJECT REPORT          " << endl;
+        cout << "=========================================" << endl;
+        cout << left << setw(20) << "Room Name:" << right << setw(21) << roomName << endl;
+        cout << left << setw(20) << "Total Walls:" << right << setw(21) << wallCount << endl;
+        cout << left << setw(20) << "Rolls Needed:" << right << setw(21) << totalRollsNeeded << endl;
+        cout << fixed << setprecision(2);
+        cout << left << setw(20) << "Price Per Roll:" << right << "$" << setw(20) << pricePerRoll << endl;
+        cout << "-----------------------------------------" << endl;
+        cout << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << totalCost << endl;
+        cout << "=========================================" << endl;
+
+        // Save to File
+        outputFile.open("report.txt");
+
+        outputFile << "=========================================" << endl;
+        outputFile << "       WALLPAPER PROJECT REPORT          " << endl;
+        outputFile << "=========================================" << endl;
+        outputFile << left << setw(20) << "Room Name:" << right << setw(21) << roomName << endl;
+        outputFile << left << setw(20) << "Total Walls:" << right << setw(21) << wallCount << endl;
+        outputFile << left << setw(20) << "Rolls Needed:" << right << setw(21) << totalRollsNeeded << endl;
+        outputFile << fixed << setprecision(2);
+        outputFile << left << setw(20) << "Price Per Roll:" << right << "$" << setw(20) << pricePerRoll << endl;
+        outputFile << "-----------------------------------------" << endl;
+        outputFile << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << totalCost << endl;
+        outputFile << "=========================================" << endl;
+
+        outputFile.close();
+        cout << "\nSuccess: Report saved to 'report.txt'." << endl;
+
+        break;
     }
 
-    // Input 5: Double for roll size coverage
-    cout << "How many square feet does one wallpaper roll cover? ";
-    cin >> rollCoverage;
-    if (rollCoverage <= 0) {
-        cout << "Error: Roll coverage must be greater than zero. Exiting program." << endl;
-        return 1;
+    case 2:
+        cout << "\n--- Project Level Rules ---" << endl;
+        cout << "Standard Level: Total cost under $150.00." << endl;
+        cout << "Premium Level: Total cost $150.00 or higher, or roll price over $45.00." << endl;
+        break;
+
+    case 3:
+        cout << "\nThank you for using the tool. Goodbye!" << endl;
+        break;
     }
-
-    // ---- 3. Compute Derived Values ----
-    totalWallArea = wallLength * wallWidth;
-    totalRollsNeeded = totalWallArea / rollCoverage;
-
-    // ---- 4. Formatted, Readable Console Output (Table) ----
-    cout << "\n" << string(45, '-') << endl;
-    cout << "| " << left << setw(25) << "PROJECT SUMMARY" << right << setw(16) << "VALUE" << " |" << endl;
-    cout << string(45, '-') << endl;
-
-    // Setting fixed floating-point precision to 2 decimal places for neatness
-    cout << fixed << setprecision(2);
-
-    cout << "| " << left << setw(25) << "Client/Project Name:" << right << setw(16) << clientName.substr(0, 15) << " |" << endl;
-    cout << "| " << left << setw(25) << "Total Wall Area:" << right << setw(13) << totalWallArea << " sqf |" << endl;
-    cout << "| " << left << setw(25) << "Rolls Currently Owned:" << right << setw(16) << customRollsInStock << " |" << endl;
-    cout << "| " << left << setw(25) << "Total Rolls Required:" << right << setw(16) << totalRollsNeeded << " |" << endl;
-    cout << string(45, '-') << endl;
-
-    // ---- 5. Save Report to File (report.txt) ----
-    ofstream outFile;
-    outFile.open("report.txt");
-
-    // Replicating the neat table structure to the external text file
-    outFile << "=====================================================" << endl;
-    outFile << "               OFFICIAL PROJECT REPORT               " << endl;
-    outFile << "=====================================================" << endl;
-    outFile << string(45, '-') << endl;
-    outFile << "| " << left << setw(25) << "METRIC" << right << setw(16) << "DETAILS" << " |" << endl;
-    outFile << string(45, '-') << endl;
-
-    outFile << fixed << setprecision(2);
-    outFile << "| " << left << setw(25) << "Project Target:" << right << setw(16) << clientName.substr(0, 15) << " |" << endl;
-    outFile << "| " << left << setw(25) << "Dimensions:" << right << setw(8) << wallLength << "x" << setw(7) << wallWidth << " |" << endl;
-    outFile << "| " << left << setw(25) << "Calculated Area:" << right << setw(13) << totalWallArea << " sqf |" << endl;
-    outFile << "| " << left << setw(25) << "Current Stock:" << right << setw(16) << customRollsInStock << " |" << endl;
-    outFile << "| " << left << setw(25) << "Total Rolls Needed:" << right << setw(16) << totalRollsNeeded << " |" << endl;
-    outFile << string(45, '-') << endl;
-
-    outFile.close(); // Clean up and close the file
-    cout << "\nReport successfully exported and saved to 'report.txt'!" << endl;
 
     return 0;
 }
