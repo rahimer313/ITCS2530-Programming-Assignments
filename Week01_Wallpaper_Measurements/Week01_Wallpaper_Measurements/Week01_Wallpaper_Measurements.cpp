@@ -131,3 +131,145 @@ int main() {
             // Output Report to Screen
             changeColor(COLOR_SUCCESS); // Switch to Light Green for the successful data output summary
             cout << "\n=========================================" << endl;
+            cout << "        WALLPAPER PROJECT REPORT          " << endl;
+            cout << "=========================================" << endl;
+            cout << left << setw(20) << "Room Name:" << right << setw(21) << roomName << endl;
+            cout << left << setw(20) << "Design Aesthetic:" << right << setw(21) << styleName << endl;
+            cout << left << setw(20) << "Total Walls:" << right << setw(21) << wallCount << endl;
+            cout << left << setw(20) << "Rolls Needed:" << right << setw(21) << totalRollsNeeded << endl;
+            cout << fixed << setprecision(2);
+            cout << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << adjustedPrice << endl;
+            cout << "-----------------------------------------" << endl;
+            cout << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << totalCost << endl;
+            cout << "=========================================" << endl;
+
+            // Save report to flat file database
+            saveReport(roomName, styleName, wallCount, totalRollsNeeded, adjustedPrice, totalCost);
+            break;
+        }
+
+        case 2:
+            changeColor(COLOR_RULES); // Light Purple for documentation screens
+            cout << "\n--- Project Level Rules ---" << endl;
+            cout << "Standard Level: Total cost calculated under $" << PREMIUM_BUDGET_LIMIT << "." << endl;
+            cout << "Premium Level: Total cost $" << PREMIUM_BUDGET_LIMIT << " or higher, or adjusted roll price over $" << PREMIUM_ROLL_PRICE_LIMIT << "." << endl;
+            break;
+
+        case 3:
+            changeColor(COLOR_ERROR); // Light Red for program termination feedback
+            cout << "\nThank you for using the tool. Goodbye!" << endl;
+            break;
+        }
+
+    } while (menuChoice != MENU_EXIT);
+
+    return 0;
+}
+
+// ============================================================================
+// FUNCTION DEFINITIONS
+// ============================================================================
+
+void changeColor(int colorCode) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, colorCode);
+}
+
+void displayBanner() {
+    cout << "\n==========================================" << endl;
+    cout << "    DIY INTERIOR DESIGN & PLANNING TOOL   " << endl;
+    cout << "       Modularized Functions Edition      " << endl;
+    cout << "==========================================" << endl;
+    cout << "Welcome! This tool helps plan your project.\n" << endl;
+}
+
+void displayMenu() {
+    cout << "--- MAIN MENU ---" << endl;
+    cout << "1. Run Wallpaper Calculator" << endl;
+    cout << "2. View Project Level Rules" << endl;
+    cout << "3. Exit Program" << endl;
+    cout << "Enter choice (" << MENU_MIN << "-" << MENU_MAX << "): ";
+}
+
+int getValidMenuChoice() {
+    int choice;
+    cin >> choice;
+    while (cin.fail() || choice < MENU_MIN || choice > MENU_MAX) {
+        cout << "Error: Invalid choice. Please enter a number between " << MENU_MIN << " and " << MENU_MAX << ": ";
+        cin.clear();
+        cin.ignore(1000, '\n');
+        cin >> choice;
+    }
+    cin.ignore();
+    return choice;
+}
+
+void collectInputs(string& room, int& walls, double& basePrice) {
+    cout << "Enter room name (ex: Master Bedroom): ";
+    getline(cin, room);
+
+    cout << "Enter number of walls: ";
+    cin >> walls;
+    while (cin.fail() || walls <= 0) {
+        cout << "Invalid input. Please enter a positive number of walls: ";
+        cin.clear();
+        cin.ignore(1000, '\n');
+        cin >> walls;
+    }
+
+    cout << "Enter base price per roll: $";
+    cin >> basePrice;
+    while (cin.fail() || basePrice <= 0.0) {
+        cout << "Invalid input. Please enter a valid positive price: $";
+        cin.clear();
+        cin.ignore(1000, '\n');
+        cin >> basePrice;
+    }
+}
+
+int getValidThemeSelection() {
+    int themeChoice;
+    cout << "\nSelect your RoomGPT Visual Theme Strategy:" << endl;
+    cout << "1. Minimalist (Eco-matte wallpaper, no markup)" << endl;
+    cout << "2. Modern (Sleek texture finish, 25% style premium)" << endl;
+    cout << "3. Rustic (Heavy embossed textile, 50% luxury premium)" << endl;
+    cout << "Enter theme choice (1-3): ";
+    cin >> themeChoice;
+
+    while (cin.fail() || themeChoice < MENU_MIN || themeChoice > MENU_MAX) {
+        cout << "Invalid theme selection. Enter 1, 2, or 3: ";
+        cin.clear();
+        cin.ignore(1000, '\n');
+        cin >> themeChoice;
+    }
+    return themeChoice;
+}
+
+double calculateDerivedValue(int walls, double price, double multiplier, int& rollsNeeded) {
+    rollsNeeded = walls * ROLLS_PER_WALL;
+    double adjustedPrice = price * multiplier;
+    return rollsNeeded * adjustedPrice;
+}
+
+void saveReport(string room, string style, int walls, int rolls, double price, double cost) {
+    ofstream outputFile("report.txt");
+    if (outputFile.is_open()) {
+        outputFile << "=========================================" << endl;
+        outputFile << "        WALLPAPER PROJECT REPORT          " << endl;
+        outputFile << "=========================================" << endl;
+        outputFile << left << setw(20) << "Room Name:" << right << setw(21) << room << endl;
+        outputFile << left << setw(20) << "Design Aesthetic:" << right << setw(21) << style << endl;
+        outputFile << left << setw(20) << "Total Walls:" << right << setw(21) << walls << endl;
+        outputFile << left << setw(20) << "Rolls Needed:" << right << setw(21) << rolls << endl;
+        outputFile << fixed << setprecision(2);
+        outputFile << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << price << endl;
+        outputFile << "-----------------------------------------" << endl;
+        outputFile << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << cost << endl;
+        outputFile << "=========================================" << endl;
+        outputFile.close();
+        cout << "\nSuccess: Report accurately saved to 'report.txt'." << endl;
+    }
+    else {
+        cout << "\nError: Unable to open file for writing output report." << endl;
+    }
+}
