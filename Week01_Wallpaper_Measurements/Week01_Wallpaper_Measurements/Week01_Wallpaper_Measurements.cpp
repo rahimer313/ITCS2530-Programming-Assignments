@@ -2,13 +2,56 @@
 #include <string>
 #include <iomanip>  // Required for setw and setprecision
 #include <fstream>  // Required for report.txt file output
+#include <windows.h> // Required for changing Console Colors on Windows
 
 using namespace std;
 
+// ============================================================================
+// GLOBAL CONSTANTS (Removing Magic Numbers)
+// ============================================================================
+// Console Color Codes
+const int COLOR_DEFAULT = 7;
+const int COLOR_INPUT = 11;
+const int COLOR_LOGISTICS = 14;
+const int COLOR_SUCCESS = 10;
+const int COLOR_RULES = 13;
+const int COLOR_ERROR = 12;
+
+// Menu and Loop Limits
+const int MENU_MIN = 1;
+const int MENU_MAX = 3;
+const int MENU_EXIT = 3;
+const int ANIMATION_STEPS = 3;
+const int DELAY_COUNT = 15000000;
+const int ROLLS_PER_WALL = 2;
+
+// Style Price Multipliers
+const double MULTIPLIER_MINIMALIST = 1.0;
+const double MULTIPLIER_MODERN = 1.25;
+const double MULTIPLIER_RUSTIC = 1.50;
+
+// Project Thresholds for Logic Checks
+const int LARGE_PROJECT_WALLS = 4;
+const int LARGE_PROJECT_ROLLS = 6;
+const double PREMIUM_BUDGET_LIMIT = 150.00;
+const double PREMIUM_ROLL_PRICE_LIMIT = 45.0;
+
+// ============================================================================
+// FUNCTION PROTOTYPES (Declarations)
+// ============================================================================
+void changeColor(int colorCode);
+void displayBanner();
+void displayMenu();
+int getValidMenuChoice();
+void collectInputs(string& room, int& walls, double& basePrice);
+int getValidThemeSelection();
+double calculateDerivedValue(int walls, double price, double multiplier, int& rollsNeeded);
+void saveReport(string room, string style, int walls, int rolls, double price, double cost);
+
+// ============================================================================
+// MAIN FUNCTION
+// ============================================================================
 int main() {
-    // ==========================================
-    // VARIABLE DECLARATIONS
-    // ==========================================
     int menuChoice = 0;
     string roomName = "";
     int wallCount = 0;
@@ -16,132 +59,69 @@ int main() {
     int totalRollsNeeded = 0;
     double totalCost = 0.0;
 
-    // New variables for RoomGPT aesthetic adjustment
     int styleChoice = 0;
-    double styleMultiplier = 1.0;
+    double styleMultiplier = MULTIPLIER_MINIMALIST;
     string styleName = "Standard";
 
-    ofstream outputFile;
-
     // ---- 1. DO-WHILE LOOP ----
-    // This loop guarantees the entire program keeps running until the user actively selects option 3.
     do {
-        // Welcome Banner
-        cout << "\n========================================" << endl;
-        cout << "     DIY HOME IMPROVEMENT TOOL v2.0     " << endl;
-        cout << "   Bridging RoomGPT Styles with Math    " << endl;
-        cout << "========================================" << endl;
-        cout << "Welcome! This tool helps plan your project.\n" << endl;
+        changeColor(COLOR_DEFAULT); // Reset to default white text
+        displayBanner();
+        displayMenu();
 
-        // Main Menu Options
-        cout << "--- MAIN MENU ---" << endl;
-        cout << "1. Run Wallpaper Calculator" << endl;
-        cout << "2. View Project Level Rules" << endl;
-        cout << "3. Exit Program" << endl;
-        cout << "Enter choice (1-3): ";
-        cin >> menuChoice;
+        menuChoice = getValidMenuChoice();
 
-        // ---- 2. WHILE LOOP (Data Validation) ----
-        // This validates the main menu selection and reprompts immediately on bad data.
-        while (cin.fail() || menuChoice < 1 || menuChoice > 3) {
-            cout << "Error: Invalid choice. Please enter a number between 1 and 3: ";
-            cin.clear();            // Clear the error flags
-            cin.ignore(1000, '\n'); // Clear the bad input from the stream buffer
-            cin >> menuChoice;
-        }
-
-        // Clear buffer for incoming string inputs
-        cin.ignore();
-
-        // Switch Statement for Navigation
         switch (menuChoice) {
         case 1: {
+            changeColor(COLOR_INPUT); // Switch text to Light Cyan for input processing
             cout << "\n--- Wallpaper Calculator ---" << endl;
 
-            // Gather Inputs
-            cout << "Enter room name (ex: Master Bedroom): ";
-            getline(cin, roomName);
+            // Collect and validate base variables using references
+            collectInputs(roomName, wallCount, pricePerRoll);
 
-            cout << "Enter number of walls: ";
-            cin >> wallCount;
+            // Theme Selection
+            styleChoice = getValidThemeSelection();
 
-            // Loop for validation: ensures user doesn't enter a negative number of walls
-            while (cin.fail() || wallCount <= 0) {
-                cout << "Invalid input. Please enter a positive number of walls: ";
-                cin.clear();
-                cin.ignore(1000, '\n');
-                cin >> wallCount;
-            }
-
-            cout << "Enter base price per roll: $";
-            cin >> pricePerRoll;
-
-            // Loop for validation: ensures cost is a valid positive value
-            while (cin.fail() || pricePerRoll <= 0.0) {
-                cout << "Invalid input. Please enter a valid positive price: $";
-                cin.clear();
-                cin.ignore(1000, '\n');
-                cin >> pricePerRoll;
-            }
-
-            // ---- ROOMGPT DESIGN THEME MENU ----
-            cout << "\nSelect your RoomGPT Visual Theme Strategy:" << endl;
-            cout << "1. Minimalist (Eco-matte wallpaper, no markup)" << endl;
-            cout << "2. Modern (Sleek texture finish, 25% style premium)" << endl;
-            cout << "3. Rustic (Heavy embossed textile, 50% luxury premium)" << endl;
-            cout << "Enter theme choice (1-3): ";
-            cin >> styleChoice;
-
-            while (cin.fail() || styleChoice < 1 || styleChoice > 3) {
-                cout << "Invalid theme selection. Enter 1, 2, or 3: ";
-                cin.clear();
-                cin.ignore(1000, '\n');
-                cin >> styleChoice;
-            }
-
-            // Processing the multiplier based on the chosen RoomGPT design theme
+            // Set multipliers based on selection rules
             switch (styleChoice) {
             case 1:
-                styleMultiplier = 1.0;
+                styleMultiplier = MULTIPLIER_MINIMALIST;
                 styleName = "Minimalist";
                 break;
             case 2:
-                styleMultiplier = 1.25;
+                styleMultiplier = MULTIPLIER_MODERN;
                 styleName = "Modern";
                 break;
             case 3:
-                styleMultiplier = 1.50;
+                styleMultiplier = MULTIPLIER_RUSTIC;
                 styleName = "Rustic";
                 break;
             }
 
-            // Calculations incorporating the derived style markup values
-            pricePerRoll = pricePerRoll * styleMultiplier;
-            totalRollsNeeded = wallCount * 2;
-            totalCost = totalRollsNeeded * pricePerRoll;
+            // Perform calculations using our specialized function
+            totalCost = calculateDerivedValue(wallCount, pricePerRoll, styleMultiplier, totalRollsNeeded);
+            // Update the adjusted roll price reflecting theme changes
+            double adjustedPrice = pricePerRoll * styleMultiplier;
 
             // ---- 3. FOR LOOP (Fixed Iteration) ----
-            // Simulates processing project logistics through exactly 3 structural loops
+            changeColor(COLOR_LOGISTICS); // Switch to Yellow for logistical feedback strings
             cout << "\nCompiling material costs against store inventories";
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < ANIMATION_STEPS; i++) {
                 cout << ".";
-                // A micro delay loop to provide structural pacing to console actions
-                for (volatile int delay = 0; delay < 15000000; delay++);
+                for (volatile int delay = 0; delay < DELAY_COUNT; delay++); // Delay pacing
             }
             cout << " Done!" << endl;
 
-            cout << "\n--- Project Status ---" << endl;
-
-            // Compound Condition 1: Project Size Check
-            if (wallCount >= 4 && totalRollsNeeded > 6) {
+            // Project Size Check
+            if (wallCount >= LARGE_PROJECT_WALLS && totalRollsNeeded > LARGE_PROJECT_ROLLS) {
                 cout << ">> Large project scale. Please secure items from matching color batches." << endl;
             }
             else {
                 cout << ">> Small project scale. Standard matching retail sets will work." << endl;
             }
 
-            // Compound Condition 2: Cost Level Check
-            if (totalCost >= 150.00 || pricePerRoll > 45.0) {
+            // Cost Level Check
+            if (totalCost >= PREMIUM_BUDGET_LIMIT || adjustedPrice > PREMIUM_ROLL_PRICE_LIMIT) {
                 cout << ">> Premium budget tier. Look into wholesale coupon distributions." << endl;
             }
             else {
@@ -149,55 +129,5 @@ int main() {
             }
 
             // Output Report to Screen
+            changeColor(COLOR_SUCCESS); // Switch to Light Green for the successful data output summary
             cout << "\n=========================================" << endl;
-            cout << "       WALLPAPER PROJECT REPORT          " << endl;
-            cout << "=========================================" << endl;
-            cout << left << setw(20) << "Room Name:" << right << setw(21) << roomName << endl;
-            cout << left << setw(20) << "Design Aesthetic:" << right << setw(21) << styleName << endl;
-            cout << left << setw(20) << "Total Walls:" << right << setw(21) << wallCount << endl;
-            cout << left << setw(20) << "Rolls Needed:" << right << setw(21) << totalRollsNeeded << endl;
-            cout << fixed << setprecision(2);
-            cout << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << pricePerRoll << endl;
-            cout << "-----------------------------------------" << endl;
-            cout << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << totalCost << endl;
-            cout << "=========================================" << endl;
-
-            // Save Report to File
-            outputFile.open("report.txt");
-            if (outputFile.is_open()) {
-                outputFile << "=========================================" << endl;
-                outputFile << "       WALLPAPER PROJECT REPORT          " << endl;
-                outputFile << "=========================================" << endl;
-                outputFile << left << setw(20) << "Room Name:" << right << setw(21) << roomName << endl;
-                outputFile << left << setw(20) << "Design Aesthetic:" << right << setw(21) << styleName << endl;
-                outputFile << left << setw(20) << "Total Walls:" << right << setw(21) << wallCount << endl;
-                outputFile << left << setw(20) << "Rolls Needed:" << right << setw(21) << totalRollsNeeded << endl;
-                outputFile << fixed << setprecision(2);
-                outputFile << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << pricePerRoll << endl;
-                outputFile << "-----------------------------------------" << endl;
-                outputFile << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << totalCost << endl;
-                outputFile << "=========================================" << endl;
-                outputFile.close();
-                cout << "\nSuccess: Report accurately saved to 'report.txt'." << endl;
-            }
-            else {
-                cout << "\nError: Unable to open file for writing output report." << endl;
-            }
-            break;
-        }
-
-        case 2:
-            cout << "\n--- Project Level Rules ---" << endl;
-            cout << "Standard Level: Total cost calculated under $150.00." << endl;
-            cout << "Premium Level: Total cost $150.00 or higher, or adjusted roll price over $45.00." << endl;
-            break;
-
-        case 3:
-            cout << "\nThank you for using the tool. Goodbye!" << endl;
-            break;
-        }
-
-    } while (menuChoice != 3); // Loop ends when menuChoice is exactly 3
-
-    return 0;
-}
