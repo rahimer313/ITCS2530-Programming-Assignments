@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/aishaehsan/Desktop/Macomb/Rahima U/ITCS2530-Programming-Assignments/Week01_Wallpaper_Measurements/Week01_Wallpaper_Measurements",
+      "program": "/Users/aishaehsan/Desktop/Macomb/Rahima U/ITCS2530-Programming-Assignments/Week01_Wallpaper_Measurements/Week01_Wallpaper_Measurements/build/Debug/outDebug"
+    }
+  ]
+}
