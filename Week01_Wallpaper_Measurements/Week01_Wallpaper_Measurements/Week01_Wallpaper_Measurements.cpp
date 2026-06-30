@@ -2,25 +2,25 @@
 #include <string>
 #include <iomanip>  // Required for setw and setprecision
 #include <fstream>  // Required for report.txt file output
-#include <windows.h> // Required for changing Console Colors on Windows
 
 using namespace std;
 
 // ============================================================================
 // GLOBAL CONSTANTS (Removing Magic Numbers)
 // ============================================================================
-// Console Color Codes
-const int COLOR_DEFAULT = 7;
-const int COLOR_INPUT = 11;
-const int COLOR_LOGISTICS = 14;
-const int COLOR_SUCCESS = 10;
-const int COLOR_RULES = 13;
-const int COLOR_ERROR = 12;
+// Console Color Codes for Macbook
+const string COLOR_DEFAULT = "\033[0m";     
+const string COLOR_INPUT = "\033[36m";      
+const string COLOR_LOGISTICS = "\033[33m";  
+const string COLOR_SUCCESS = "\033[32m";    
+const string COLOR_RULES = "\033[35m";      
+const string COLOR_ERROR = "\033[31m";
 
 // Menu and Loop Limits
 const int MENU_MIN = 1;
 const int MENU_MAX = 3;
 const int MENU_EXIT = 3;
+const int SUPPLY_COUNT = 3; // Constant controls how many supply costs the array stores
 const int ANIMATION_STEPS = 3;
 const int DELAY_COUNT = 15000000;
 const int ROLLS_PER_WALL = 2;
@@ -36,17 +36,23 @@ const int LARGE_PROJECT_ROLLS = 6;
 const double PREMIUM_BUDGET_LIMIT = 150.00;
 const double PREMIUM_ROLL_PRICE_LIMIT = 45.0;
 
+// Enum gives names to the wallpaper style choices instead of only using numbers.
+enum WallpaperStyle {MINIMALIST = 1, MODERN = 2, RUSTIC = 3};
+
 // ============================================================================
 // FUNCTION PROTOTYPES (Declarations)
 // ============================================================================
-void changeColor(int colorCode);
+void changeColor(string colorCode);
 void displayBanner();
 void displayMenu();
 int getValidMenuChoice();
 void collectInputs(string& room, int& walls, double& basePrice);
-int getValidThemeSelection();
+WallpaperStyle getValidThemeSelection();
+void collectSupplyCosts(double supplyCosts[], int size); 
+double calculateSupplyTotal(const double supplyCosts[], int size); 
 double calculateDerivedValue(int walls, double price, double multiplier, int& rollsNeeded);
-void saveReport(string room, string style, int walls, int rolls, double price, double cost);
+void saveReport(string room, string style, int walls, int rolls, double price, double cost,
+    const double supplyCosts[], int size, double supplyTotal);
 
 // ============================================================================
 // MAIN FUNCTION
@@ -58,8 +64,10 @@ int main() {
     double pricePerRoll = 0.0;
     int totalRollsNeeded = 0;
     double totalCost = 0.0;
+    double supplyCosts[SUPPLY_COUNT] = { 0.0 }; // This array stores three extra supply costs, like tape, brush, and primer.
+    double supplyTotal = 0.0;
 
-    int styleChoice = 0;
+    WallpaperStyle styleChoice = MINIMALIST;
     double styleMultiplier = MULTIPLIER_MINIMALIST;
     string styleName = "Standard";
 
@@ -83,23 +91,29 @@ int main() {
             styleChoice = getValidThemeSelection();
 
             // Set multipliers based on selection rules
-            switch (styleChoice) {
-            case 1:
+            switch (styleChoice) { 
+            case MINIMALIST: 
                 styleMultiplier = MULTIPLIER_MINIMALIST;
                 styleName = "Minimalist";
                 break;
-            case 2:
+            case MODERN: 
                 styleMultiplier = MULTIPLIER_MODERN;
                 styleName = "Modern";
                 break;
-            case 3:
+            case RUSTIC: 
                 styleMultiplier = MULTIPLIER_RUSTIC;
                 styleName = "Rustic";
                 break;
             }
 
+            // The first function fills the array, and the second function totals the array values.
+            collectSupplyCosts(supplyCosts, SUPPLY_COUNT); 
+            supplyTotal = calculateSupplyTotal(supplyCosts, SUPPLY_COUNT);
+
             // Perform calculations using our specialized function
             totalCost = calculateDerivedValue(wallCount, pricePerRoll, styleMultiplier, totalRollsNeeded);
+            totalCost = totalCost + supplyTotal; // This adds the extra supply costs to the wallpaper cost.
+
             // Update the adjusted roll price reflecting theme changes
             double adjustedPrice = pricePerRoll * styleMultiplier;
 
@@ -139,12 +153,17 @@ int main() {
             cout << left << setw(20) << "Rolls Needed:" << right << setw(21) << totalRollsNeeded << endl;
             cout << fixed << setprecision(2);
             cout << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << adjustedPrice << endl;
+            cout << left << setw(20) << "Supply 1 Cost:" << right << "$" << setw(20) << supplyCosts[0] << endl; 
+            cout << left << setw(20) << "Supply 2 Cost:" << right << "$" << setw(20) << supplyCosts[1] << endl; 
+            cout << left << setw(20) << "Supply 3 Cost:" << right << "$" << setw(20) << supplyCosts[2] << endl; 
+            cout << left << setw(20) << "Supply Total:" << right << "$" << setw(20) << supplyTotal << endl; 
             cout << "-----------------------------------------" << endl;
             cout << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << totalCost << endl;
             cout << "=========================================" << endl;
 
             // Save report to flat file database
-            saveReport(roomName, styleName, wallCount, totalRollsNeeded, adjustedPrice, totalCost);
+            saveReport(roomName, styleName, wallCount, totalRollsNeeded, adjustedPrice, totalCost,
+                supplyCosts, SUPPLY_COUNT, supplyTotal);
             break;
         }
 
@@ -170,9 +189,8 @@ int main() {
 // FUNCTION DEFINITIONS
 // ============================================================================
 
-void changeColor(int colorCode) {
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    SetConsoleTextAttribute(hConsole, colorCode);
+void changeColor(string colorCode) {
+    cout << colorCode;
 }
 
 void displayBanner() {
@@ -208,6 +226,11 @@ void collectInputs(string& room, int& walls, double& basePrice) {
     cout << "Enter room name (ex: Master Bedroom): ";
     getline(cin, room);
 
+    while (room == "") { 
+        cout << "Invalid input. Please enter a room name: "; 
+        getline(cin, room); 
+    }
+
     cout << "Enter number of walls: ";
     cin >> walls;
     while (cin.fail() || walls <= 0) {
@@ -227,7 +250,7 @@ void collectInputs(string& room, int& walls, double& basePrice) {
     }
 }
 
-int getValidThemeSelection() {
+WallpaperStyle getValidThemeSelection() {
     int themeChoice;
     cout << "\nSelect your RoomGPT Visual Theme Strategy:" << endl;
     cout << "1. Minimalist (Eco-matte wallpaper, no markup)" << endl;
@@ -242,8 +265,34 @@ int getValidThemeSelection() {
         cin.ignore(1000, '\n');
         cin >> themeChoice;
     }
-    return themeChoice;
+    return static_cast<WallpaperStyle>(themeChoice);
 }
+
+void collectSupplyCosts(double supplyCosts[], int size) { 
+    cout << "\nEnter three extra supply costs, such as tape, brush, or primer." << endl; 
+
+    for (int i = 0; i < size; i++) { 
+        cout << "Supply " << i + 1 << " cost: $"; 
+        cin >> supplyCosts[i]; 
+
+        while (cin.fail() || supplyCosts[i] < 0.0) { 
+            cout << "Invalid input. Please enter 0 or higher: $"; 
+            cin.clear(); 
+            cin.ignore(1000, '\n'); 
+            cin >> supplyCosts[i]; 
+        } 
+    } 
+} 
+
+double calculateSupplyTotal(const double supplyCosts[], int size) { 
+    double total = 0.0; 
+
+    for (int i = 0; i < size; i++) { 
+        total += supplyCosts[i]; 
+    } 
+
+    return total; 
+} 
 
 double calculateDerivedValue(int walls, double price, double multiplier, int& rollsNeeded) {
     rollsNeeded = walls * ROLLS_PER_WALL;
@@ -251,7 +300,7 @@ double calculateDerivedValue(int walls, double price, double multiplier, int& ro
     return rollsNeeded * adjustedPrice;
 }
 
-void saveReport(string room, string style, int walls, int rolls, double price, double cost) {
+void saveReport(string room, string style, int walls, int rolls, double price, double cost, const double supplyCosts[], int size, double supplyTotal) {
     ofstream outputFile("report.txt");
     if (outputFile.is_open()) {
         outputFile << "=========================================" << endl;
@@ -263,6 +312,12 @@ void saveReport(string room, string style, int walls, int rolls, double price, d
         outputFile << left << setw(20) << "Rolls Needed:" << right << setw(21) << rolls << endl;
         outputFile << fixed << setprecision(2);
         outputFile << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << price << endl;
+        
+        for (int i = 0; i < size; i++) { 
+            outputFile << left << setw(20) << "Supply Cost:" << right << "$" << setw(20) << supplyCosts[i] << endl; 
+        } 
+        outputFile << left << setw(20) << "Supply Total:" << right << "$" << setw(20) << supplyTotal << endl; 
+
         outputFile << "-----------------------------------------" << endl;
         outputFile << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << cost << endl;
         outputFile << "=========================================" << endl;
