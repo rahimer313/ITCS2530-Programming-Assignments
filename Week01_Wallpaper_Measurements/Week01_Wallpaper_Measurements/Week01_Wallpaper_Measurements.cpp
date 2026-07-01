@@ -1,3 +1,4 @@
+// Week 07: Programming Assignment - Adding Structures
 #include <iostream>
 #include <string>
 #include <iomanip>  // Required for setw and setprecision
@@ -39,6 +40,11 @@ const double PREMIUM_ROLL_PRICE_LIMIT = 45.0;
 // Enum gives names to the wallpaper style choices instead of only using numbers.
 enum WallpaperStyle {MINIMALIST = 1, MODERN = 2, RUSTIC = 3};
 
+// Structure groups the name and cost for one supply item.
+struct SupplyItem {
+    string name;
+    double cost;
+}; 
 // ============================================================================
 // FUNCTION PROTOTYPES (Declarations)
 // ============================================================================
@@ -48,11 +54,10 @@ void displayMenu();
 int getValidMenuChoice();
 void collectInputs(string& room, int& walls, double& basePrice);
 WallpaperStyle getValidThemeSelection();
-void collectSupplyCosts(double supplyCosts[], int size); 
-double calculateSupplyTotal(const double supplyCosts[], int size); 
+void collectSupplyCosts(SupplyItem supplies[], int size);
+double calculateSupplyTotal(const SupplyItem supplies[], int size);
 double calculateDerivedValue(int walls, double price, double multiplier, int& rollsNeeded);
-void saveReport(string room, string style, int walls, int rolls, double price, double cost,
-    const double supplyCosts[], int size, double supplyTotal);
+void saveReport(string room, string style, int walls, int rolls, double price, double cost, const SupplyItem supplies[], int size, double supplyTotal);
 
 // ============================================================================
 // MAIN FUNCTION
@@ -64,7 +69,7 @@ int main() {
     double pricePerRoll = 0.0;
     int totalRollsNeeded = 0;
     double totalCost = 0.0;
-    double supplyCosts[SUPPLY_COUNT] = { 0.0 }; // This array stores three extra supply costs, like tape, brush, and primer.
+    SupplyItem supplies[SUPPLY_COUNT]; // Local array of structures stores the three supplies for this project.
     double supplyTotal = 0.0;
 
     WallpaperStyle styleChoice = MINIMALIST;
@@ -106,9 +111,9 @@ int main() {
                 break;
             }
 
-            // The first function fills the array, and the second function totals the array values.
-            collectSupplyCosts(supplyCosts, SUPPLY_COUNT); 
-            supplyTotal = calculateSupplyTotal(supplyCosts, SUPPLY_COUNT);
+            // Fill the struct array, then total the cost field from each supply.
+            collectSupplyCosts(supplies, SUPPLY_COUNT); 
+            supplyTotal = calculateSupplyTotal(supplies, SUPPLY_COUNT);
 
             // Perform calculations using our specialized function
             totalCost = calculateDerivedValue(wallCount, pricePerRoll, styleMultiplier, totalRollsNeeded);
@@ -153,17 +158,17 @@ int main() {
             cout << left << setw(20) << "Rolls Needed:" << right << setw(21) << totalRollsNeeded << endl;
             cout << fixed << setprecision(2);
             cout << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << adjustedPrice << endl;
-            cout << left << setw(20) << "Supply 1 Cost:" << right << "$" << setw(20) << supplyCosts[0] << endl; 
-            cout << left << setw(20) << "Supply 2 Cost:" << right << "$" << setw(20) << supplyCosts[1] << endl; 
-            cout << left << setw(20) << "Supply 3 Cost:" << right << "$" << setw(20) << supplyCosts[2] << endl; 
+            for (int i = 0; i < SUPPLY_COUNT; i++) {
+                string supplyLabel = supplies[i].name + ":";
+                cout << left << setw(20) << supplyLabel << right << "$" << setw(20) << supplies[i].cost << endl;
+            }
             cout << left << setw(20) << "Supply Total:" << right << "$" << setw(20) << supplyTotal << endl; 
             cout << "-----------------------------------------" << endl;
             cout << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << totalCost << endl;
             cout << "=========================================" << endl;
 
             // Save report to flat file database
-            saveReport(roomName, styleName, wallCount, totalRollsNeeded, adjustedPrice, totalCost,
-                supplyCosts, SUPPLY_COUNT, supplyTotal);
+            saveReport(roomName, styleName, wallCount, totalRollsNeeded, adjustedPrice, totalCost, supplies, SUPPLY_COUNT, supplyTotal);
             break;
         }
 
@@ -268,31 +273,38 @@ WallpaperStyle getValidThemeSelection() {
     return static_cast<WallpaperStyle>(themeChoice);
 }
 
-void collectSupplyCosts(double supplyCosts[], int size) { 
-    cout << "\nEnter three extra supply costs, such as tape, brush, or primer." << endl; 
+void collectSupplyCosts(SupplyItem supplies[], int size) {
+    cout << "\nEnter three extra supplies, such as tape, brush, or primer." << endl;
+    cin.ignore(1000, '\n');
+    // Store each supply's name and cost in one struct element.
+    for (int i = 0; i < size; i++) {
+        cout << "Supply " << i + 1 << " name: ";
+        getline(cin, supplies[i].name);
 
-    for (int i = 0; i < size; i++) { 
-        cout << "Supply " << i + 1 << " cost: $"; 
-        cin >> supplyCosts[i]; 
+        while (supplies[i].name == "") {
+            cout << "Invalid input. Please enter a supply name: ";
+            getline(cin, supplies[i].name);
+        }
+        cout << supplies[i].name << " cost: $";
+        cin >> supplies[i].cost;
 
-        while (cin.fail() || supplyCosts[i] < 0.0) { 
-            cout << "Invalid input. Please enter 0 or higher: $"; 
-            cin.clear(); 
-            cin.ignore(1000, '\n'); 
-            cin >> supplyCosts[i]; 
-        } 
-    } 
-} 
+        while (cin.fail() || supplies[i].cost < 0.0) {
+            cout << "Invalid input. Please enter 0 or higher: $";
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cin >> supplies[i].cost;
+        }
+        cin.ignore(1000, '\n');
+    }
+}
 
-double calculateSupplyTotal(const double supplyCosts[], int size) { 
-    double total = 0.0; 
-
-    for (int i = 0; i < size; i++) { 
-        total += supplyCosts[i]; 
-    } 
-
-    return total; 
-} 
+double calculateSupplyTotal(const SupplyItem supplies[], int size) {
+    double total = 0.0;
+    for (int i = 0; i < size; i++) {
+        total += supplies[i].cost; // Add only the cost field from each struct.
+    }
+    return total;
+}
 
 double calculateDerivedValue(int walls, double price, double multiplier, int& rollsNeeded) {
     rollsNeeded = walls * ROLLS_PER_WALL;
@@ -300,7 +312,7 @@ double calculateDerivedValue(int walls, double price, double multiplier, int& ro
     return rollsNeeded * adjustedPrice;
 }
 
-void saveReport(string room, string style, int walls, int rolls, double price, double cost, const double supplyCosts[], int size, double supplyTotal) {
+void saveReport(string room, string style, int walls, int rolls, double price, double cost,const SupplyItem supplies[], int size, double supplyTotal) {
     ofstream outputFile("report.txt");
     if (outputFile.is_open()) {
         outputFile << "=========================================" << endl;
@@ -313,11 +325,11 @@ void saveReport(string room, string style, int walls, int rolls, double price, d
         outputFile << fixed << setprecision(2);
         outputFile << left << setw(20) << "Adjusted Roll Price:" << right << "$" << setw(20) << price << endl;
         
-        for (int i = 0; i < size; i++) { 
-            outputFile << left << setw(20) << "Supply Cost:" << right << "$" << setw(20) << supplyCosts[i] << endl; 
-        } 
-        outputFile << left << setw(20) << "Supply Total:" << right << "$" << setw(20) << supplyTotal << endl; 
-
+        for (int i = 0; i < size; i++) {
+            string supplyLabel = supplies[i].name + ":";
+            outputFile << left << setw(20) << supplyLabel << right << "$" << setw(20) << supplies[i].cost << endl;
+        }
+        outputFile << left << setw(20) << "Supply Total:" << right << "$" << setw(20) << supplyTotal << endl;
         outputFile << "-----------------------------------------" << endl;
         outputFile << left << setw(20) << "Total Cost:" << right << "$" << setw(20) << cost << endl;
         outputFile << "=========================================" << endl;
